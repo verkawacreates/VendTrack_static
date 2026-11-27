@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VendTrack — Vending Fleet & Operations Management</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast hidden" role="status" aria-live="polite">
+    <span class="toast-dot"></span>
+    <span id="toast-message">Action completed</span>
+  </div>
+
+  <!-- =========================================================
+       VIEW 1: LOGIN SCREEN (Split Layout + Show Password Mode)
+  ========================================================== -->
+  <section id="auth-login-view" class="auth-split">
+    <!-- Left Dark Teal Branding Panel -->
+    <div class="auth-brand-panel">
+      <div class="auth-grid-overlay"></div>
+
+      <div class="brand-header relative-z">
+        <div class="brand-icon-box">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+            <path d="M8 6h8M8 10h8M8 14h4M15 17h1"></path>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-title">VendTrack</span>
+          <span class="brand-subtitle">Enterprise Fleet Telemetry</span>
+        </div>
+      </div>
+
+      <div class="auth-hero relative-z">
+        <span class="hero-pill">v2.0 Java + Web Operations Hub</span>
+        <h1>Real-time visibility across every vending machine.</h1>
+        <p>
+          Monitor live coil planograms, reconcile QR &amp; cash ledgers, dispatch restock routes, and resolve hardware tickets from a single dashboard.
+        </p>
+      </div>
+
+      <div class="auth-stats relative-z">
+        <div>
+          <strong>99.4%</strong>
+          <span>Fleet Uptime</span>
+        </div>
+        <div>
+          <strong>Live</strong>
+          <span>Coil Telemetry</span>
+        </div>
+        <div>
+          <strong>CSV / Audit</strong>
+          <span>Instant Export</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sign-In Form Panel -->
+    <div class="auth-form-panel">
+      <div class="auth-card">
+        <div class="auth-card-header">
+          <h2>Sign in to VendTrack</h2>
+          <p>Use your default work email or operator username.</p>
+        </div>
+
+        <!-- Default Credentials Quick-Fill Card -->
+        <div class="demo-credentials-box">
+          <div class="demo-credentials-info">
+            <p class="demo-title">Default Operator Credentials</p>
+            <p>Email / User: <code>admin@vendtrack.io</code> or <code>admin</code></p>
+            <p>Password: <code>VendTrack2026!</code></p>
+          </div>
+          <button type="button" onclick="fillDefaultCredentials()" class="btn-autofill">
+            Auto-Fill
+          </button>
+        </div>
+
+        <!-- Error Message Box -->
+        <div id="login-error" class="alert-error hidden">
+          Invalid credentials. Enter <strong>admin@vendtrack.io</strong> (or <strong>admin</strong>) and <strong>VendTrack2026!</strong>.
+        </div>
+
+        <form id="login-form" class="form-stack" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="login-identity" class="field-label">Work Email or Username</label>
+            <input id="login-identity" type="text" required value="admin@vendtrack.io"
+                   autocomplete="username"
+                   placeholder="admin@vendtrack.io or admin"
+                   class="text-input" />
+          </div>
+
+          <div class="form-group">
+            <div class="label-row">
+              <label for="login-password" class="field-label">Password</label>
+              <button type="button" onclick="showAuthScreen('recovery')" class="link-btn">
+                Forgot password?
+              </button>
+            </div>
+
+            <!-- Password Input with Show/Hide Password Mode -->
+            <div class="password-wrapper">
+              <input id="login-password" type="password" required value="VendTrack2026!"
+                     autocomplete="current-password"
+                     onkeyup="checkCapsLock(event)"
+                     placeholder="Enter your password"
+                     class="text-input password-input" />
+              <button type="button"
+                      id="toggle-pw-btn"
+                      aria-pressed="false"
+                      aria-label="Toggle password visibility"
+                      onclick="togglePasswordVisibility()"
+                      class="toggle-pw-btn">
+                <svg id="eye-open-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg id="eye-closed-icon" class="hidden" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                <span id="toggle-pw-label">Show</span>
+              </button>
+            </div>
+
+            <p id="capslock-warning" class="capslock-warning hidden">
+              &#9888; Caps Lock is turned on.
+            </p>
+          </div>
+
+          <div class="session-row">
+            <label class="checkbox-label">
+              <input type="checkbox" checked />
+              Keep session active for 8 hours
+            </label>
+            <span id="pw-mode-badge" class="pw-mode-badge">Password hidden</span>
+          </div>
+
+          <button type="submit" class="btn-primary full-width">
+            Sign In to Operations
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       VIEW 2: PASSWORD RECOVERY
+  ========================================================== -->
+  <section id="auth-recovery-view" class="recovery-screen hidden">
+    <div class="auth-card">
+      <div class="recovery-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+          <path d="M7 11V7a5 5 0 0110 0v4"></path>
+        </svg>
+      </div>
+
+      <h2 class="recovery-title">Password recovery</h2>
+      <p class="recovery-desc">
+        Enter your registered VendTrack work email to receive a reset link.
+      </p>
+
+      <div id="recovery-success" class="alert-success hidden">
+        Recovery link dispatched! For demo access, sign in with <code>admin@vendtrack.io</code> and <code>VendTrack2026!</code>.
+      </div>
+
+      <form onsubmit="handleRecovery(event)" class="form-stack mt-20">
+        <div class="form-group">
+          <label for="recovery-email" class="field-label">Work Email Address</label>
+          <input id="recovery-email" type="email" required value="admin@vendtrack.io" class="text-input" />
+        </div>
+
+        <button type="submit" class="btn-primary full-width">
+          Send Recovery Link
+        </button>
+      </form>
+
+      <div class="recovery-footer">
+        <button type="button" onclick="showAuthScreen('login')" class="link-back">
+          &larr; Back to Sign In
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       MAIN AUTHENTICATED APP SHELL (8 Operational Modules)
+  ========================================================== -->
+  <div id="app-shell" class="app-shell hidden">
+    <div id="mobile-backdrop" onclick="toggleMobileSidebar()" class="mobile-backdrop hidden"></div>
+
+    <!-- Persistent Dark Teal Left Sidebar -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+              <path d="M8 6h8M8 10h8M8 14h4"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="sidebar-title">VendTrack</span>
+            <span class="sidebar-sub">Operations Suite v2</span>
+          </div>
+        </div>
+        <button onclick="toggleMobileSidebar()" class="mobile-close-btn">&times;</button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="nav-section-label">Overview</p>
+        <button onclick="switchPage('dashboard')" data-nav="dashboard" class="nav-item active">
+          <span class="nav-dot"></span>
+          Operations Dashboard
+        </button>
+
+        <p class="nav-section-label">Fleet &amp; Inventory</p>
+        <button onclick="switchPage('machines')" data-nav="machines" class="nav-item">
+          <span class="nav-dot"></span>
+          Machines &amp; Locations
+        </button>
+        <button onclick="switchPage('machine-detail')" data-nav="machine-detail" class="nav-item">
+          <span class="nav-dot"></span>
+          Machine Details
+        </button>
+        <button onclick="switchPage('products')" data-nav="products" class="nav-item">
+          <span class="nav-dot"></span>
+          Product Catalog
+        </button>
+
+        <p class="nav-section-label">Ledger &amp; Field Ops</p>
+        <button onclick="switchPage('sales')" data-nav="sales" class="nav-item">
+          <span class="nav-dot"></span>
+          Sales Ledger
+        </button>
+        <button onclick="switchPage('restocking')" data-nav="restocking" class="nav-item">
+          <span class="nav-dot"></span>
+          Restocking History
+        </button>
+        <button onclick="switchPage('maintenance')" data-nav="maintenance" class="nav-item">
+          <span class="nav-dot"></span>
+          Maintenance Requests
+        </button>
+        <button onclick="switchPage('employees')" data-nav="employees" class="nav-item">
+          <span class="nav-dot"></span>
+          Employees &amp; Reports
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="operator-info">
+          <p class="operator-name">Ops Administrator</p>
+          <p id="sidebar-user-email" class="operator-email">admin@vendtrack.io</p>
+        </div>
+        <button onclick="handleLogout()" title="Sign out" class="btn-logout">
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Workspace -->
+    <div class="workspace">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button onclick="toggleMobileSidebar()" class="mobile-menu-btn">&#9776;</button>
+          <div>
+            <h1 id="topbar-title">Operations Dashboard</h1>
+            <p id="topbar-subtitle">Live telemetry, revenue performance, and fleet alerts</p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button onclick="openModal('vend-modal')" class="btn-dark-teal">
+            &#9889; Simulate Vend
+          </button>
+          <button onclick="resetDemoData()" class="btn-outline">
+            Reset Data
+          </button>
+        </div>
+      </header>
+
+      <main class="main-content">
+
+        <!-- MODULE 1: OPERATIONS DASHBOARD -->
+        <div id="page-dashboard" class="module-page">
+          <div class="kpi-grid">
+            <div class="card kpi-card">
+              <p class="kpi-label">Monthly Gross Revenue</p>
+              <div class="kpi-value-row">
+                <p id="kpi-revenue" class="kpi-value">₱148,920.00</p>
+                <span class="badge badge-green">+12.4%</span>
+              </div>
+              <p class="kpi-foot">Updates live on simulated vends</p>
+            </div>
+
+            <div class="card kpi-card">
+              <p class="kpi-label">Active Machines</p>
+              <div class="kpi-value-row">
+                <p id="kpi-machines" class="kpi-value">4 / 5</p>
+                <span class="badge badge-teal">Online</span>
+              </div>
+              <p class="kpi-foot">1 unit flagged for maintenance</p>
+            </div>
+
+            <div class="card kpi-card">
+              <p class="kpi-label">Low Stock Alerts</p>
+              <div class="kpi-value-row">
+                <p id="kpi-lowstock" class="kpi-value">2 Units</p>
+                <span class="badge badge-amber">Below 30%</span>
+              </div>
+              <p class="kpi-foot">Priority restock queue active</p>
+            </div>
+
+            <div class="card kpi-card">
+              <p class="kpi-label">Total Vends Logged</p>
+              <div class="kpi-value-row">
+                <p id="kpi-vends" class="kpi-value">642</p>
+                <span class="badge badge-green">+8.1%</span>
+              </div>
+              <p class="kpi-foot">GCash QR, Maya QR &amp; Cash</p>
+            </div>
+          </div>
+
+          <div class="dashboard-split">
+            <div class="card panel-pad">
+              <div class="panel-header">
+                <div>
+                  <h2>Weekly Vend Revenue</h2>
+                  <p>Daily gross collections across campus &amp; commercial terminals</p>
+                </div>
+                <span class="tag-pill">Last 7 Days</span>
+              </div>
+
+              <div class="bar-chart">
+                <div class="bar-col"><span>₱18.2k</span><div class="bar" style="height: 112px;"></div></div>
+                <div class="bar-col"><span>₱21.5k</span><div class="bar" style="height: 134px;"></div></div>
+                <div class="bar-col"><span>₱19.8k</span><div class="bar" style="height: 122px;"></div></div>
+                <div class="bar-col"><span>₱24.9k</span><div class="bar bar-strong" style="height: 156px;"></div></div>
+                <div class="bar-col"><span>₱26.4k</span><div class="bar bar-peak" style="height: 168px;"></div></div>
+                <div class="bar-col"><span>₱20.1k</span><div class="bar" style="height: 125px;"></div></div>
+                <div class="bar-col"><span>₱18.0k</span><div class="bar" style="height: 110px;"></div></div>
+              </div>
+              <div class="bar-labels">
+                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span class="bold-day">Fri</span><span>Sat</span><span>Sun</span>
+              </div>
+            </div>
+
+            <div class="card panel-pad flex-col-between">
+              <div>
+                <div class="panel-header-simple">
+                  <h2>Priority Dispatch Queue</h2>
+                  <p>Live alerts from telemetry &amp; tickets</p>
+                </div>
+                <div id="dashboard-alerts-list" class="alerts-stack"></div>
+              </div>
+              <button onclick="switchPage('machines')" class="btn-outline full-width mt-16">
+                Inspect All Machines &rarr;
+              </button>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-header">
+              <h2>Recent Fleet Transactions</h2>
+              <button onclick="switchPage('sales')" class="link-btn">View Full Ledger</button>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Txn ID</th>
+                    <th>Machine</th>
+                    <th>Item Dispensed</th>
+                    <th>Payment</th>
+                    <th>Amount</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-recent-txns"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 2: MACHINES & LOCATIONS -->
+        <div id="page-machines" class="module-page hidden">
+          <div class="card toolbar-card">
+            <div class="toolbar-inputs">
+              <input id="machine-search" type="text" oninput="renderMachinesTable()"
+                     placeholder="Search by machine ID, building, or model..."
+                     class="text-input input-sm" />
+              <select id="machine-status-filter" onchange="renderMachinesTable()" class="select-input">
+                <option value="all">All Statuses</option>
+                <option value="Online">Online</option>
+                <option value="Low Stock">Low Stock</option>
+                <option value="Maintenance">Maintenance</option>
+              </select>
+            </div>
+            <button onclick="openModal('machine-modal')" class="btn-primary">
+              + Register Machine
+            </button>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Machine ID</th>
+                    <th>Location &amp; Site</th>
+                    <th>Model</th>
+                    <th>Stock Capacity</th>
+                    <th>Status</th>
+                    <th class="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="machines-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 3: MACHINE DETAILS -->
+        <div id="page-machine-detail" class="module-page hidden">
+          <div class="card detail-banner">
+            <div>
+              <div class="detail-title-row">
+                <h2 id="detail-machine-title">VM-001 • Engineering Building Lobby</h2>
+                <span id="detail-machine-badge" class="badge badge-green">Online • 4.2°C</span>
+              </div>
+              <p id="detail-machine-meta" class="detail-meta">Model: SmartVend Pro-48 • Firmware v4.12</p>
+            </div>
+            <div class="detail-controls">
+              <select id="detail-machine-select" onchange="selectMachineDetail(this.value)" class="select-input"></select>
+              <button onclick="restockAllSlotsForCurrentMachine()" class="btn-primary">
+                Fill All Coils
+              </button>
+            </div>
+          </div>
+
+          <div class="card panel-pad">
+            <div class="panel-header">
+              <h2>Live Coil Planogram (Click + Refill to replenish individual slots)</h2>
+              <span class="muted-text">4 Active Trays</span>
+            </div>
+            <div id="coil-planogram-grid" class="coil-grid"></div>
+          </div>
+        </div>
+
+        <!-- MODULE 4: PRODUCT CATALOG -->
+        <div id="page-products" class="module-page hidden">
+          <div class="card table-card">
+            <div class="table-header">
+              <div>
+                <h2>Master Product Catalog</h2>
+                <p class="muted-text">Approved SKUs, unit costs, retail pricing, and gross profit margins</p>
+              </div>
+              <button onclick="openModal('product-modal')" class="btn-primary">
+                + Add New SKU
+              </button>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Unit Cost</th>
+                    <th>Vend Price</th>
+                    <th>Margin</th>
+                  </tr>
+                </thead>
+                <tbody id="products-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 5: SALES LEDGER -->
+        <div id="page-sales" class="module-page hidden">
+          <div class="kpi-grid-3">
+            <div class="card kpi-card">
+              <p class="kpi-label">Digital / QR Settlements</p>
+              <p id="ledger-digital-total" class="kpi-value mt-6">₱101,265.00</p>
+            </div>
+            <div class="card kpi-card">
+              <p class="kpi-label">Cash Vault Collections</p>
+              <p id="ledger-cash-total" class="kpi-value mt-6">₱47,655.00</p>
+            </div>
+            <div class="card kpi-card">
+              <p class="kpi-label">Settlement Accuracy</p>
+              <p class="kpi-value text-green mt-6">99.8% Verified</p>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-header">
+              <h2>Audited Sales Ledger</h2>
+              <button onclick="exportSalesCSV()" class="btn-outline">
+                Export CSV Report
+              </button>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Reference</th>
+                    <th>Date &amp; Time</th>
+                    <th>Terminal</th>
+                    <th>Item</th>
+                    <th>Method</th>
+                    <th>Gross</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-ledger-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 6: RESTOCKING HISTORY -->
+        <div id="page-restocking" class="module-page hidden">
+          <div class="card panel-pad">
+            <h2 class="section-heading">Record Field Restock Entry</h2>
+            <form onsubmit="addRestockLog(event)" class="restock-form-grid">
+              <select id="restock-machine" class="select-input"></select>
+              <input id="restock-items" type="number" min="1" max="120" value="40" required
+                     placeholder="Units added" class="text-input input-sm" />
+              <input id="restock-tech" type="text" value="Marco Santos" required
+                     placeholder="Route technician" class="text-input input-sm" />
+              <button type="submit" class="btn-primary">Save Restock Log</button>
+            </form>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Batch ID</th>
+                    <th>Machine</th>
+                    <th>Technician</th>
+                    <th>Units Added</th>
+                    <th>Post-Fill Level</th>
+                  </tr>
+                </thead>
+                <tbody id="restock-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 7: MAINTENANCE REQUESTS -->
+        <div id="page-maintenance" class="module-page hidden">
+          <div class="card table-card">
+            <div class="table-header">
+              <div>
+                <h2>Service &amp; Maintenance Tickets</h2>
+                <p class="muted-text">Click any status badge to toggle ticket resolution</p>
+              </div>
+              <button onclick="openModal('ticket-modal')" class="btn-primary">
+                + Create Ticket
+              </button>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ticket</th>
+                    <th>Machine</th>
+                    <th>Fault Description</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="maintenance-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODULE 8: EMPLOYEES & REPORTS -->
+        <div id="page-employees" class="module-page hidden">
+          <div class="card table-card">
+            <div class="table-header">
+              <div>
+                <h2>Field Operators &amp; Access Roles</h2>
+                <p class="muted-text">Staff assigned to route replenishment and diagnostics</p>
+              </div>
+              <button onclick="window.print()" class="btn-outline">
+                Print Operations Summary
+              </button>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Operator</th>
+                    <th>Work Email</th>
+                    <th>Role</th>
+                    <th>Assigned Zone</th>
+                    <th>Shift Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="font-bold">Ops Administrator</td>
+                    <td class="mono">admin@vendtrack.io</td>
+                    <td>Fleet Manager</td>
+                    <td>All Campus Zones</td>
+                    <td><span class="badge badge-green">Active</span></td>
+                  </tr>
+                  <tr>
+                    <td class="font-bold">Marco Santos</td>
+                    <td class="mono">m.santos@vendtrack.io</td>
+                    <td>Route Replenisher</td>
+                    <td>Engineering &amp; IT Zone</td>
+                    <td><span class="badge badge-green">On Route</span></td>
+                  </tr>
+                  <tr>
+                    <td class="font-bold">Rina Dizon</td>
+                    <td class="mono">r.dizon@vendtrack.io</td>
+                    <td>Field Technician</td>
+                    <td>Library &amp; Gym Zone</td>
+                    <td><span class="badge badge-green">Active</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       INTERACTIVE MODALS
+  ========================================================== -->
+  <!-- 1. Simulate Vend Modal -->
+  <div id="vend-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>&#9889; Simulate Live Machine Vend</h3>
+        <button onclick="closeModal('vend-modal')" class="modal-close">&times;</button>
+      </div>
+      <form onsubmit="handleSimulateVend(event)" class="form-stack">
+        <div class="form-group">
+          <label class="field-label">Select Vending Terminal</label>
+          <select id="sim-machine" class="select-input full-width"></select>
+        </div>
+        <div class="form-group">
+          <label class="field-label">Product Dispensed</label>
+          <select id="sim-product" class="select-input full-width"></select>
+        </div>
+        <div class="form-group">
+          <label class="field-label">Payment Method</label>
+          <select id="sim-payment" class="select-input full-width">
+            <option value="GCash QR">GCash QR</option>
+            <option value="Maya QR">Maya QR</option>
+            <option value="Cash">Cash</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal('vend-modal')" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Complete Vend</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Register Machine Modal -->
+  <div id="machine-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Register New Vending Machine</h3>
+        <button onclick="closeModal('machine-modal')" class="modal-close">&times;</button>
+      </div>
+      <form onsubmit="handleAddMachine(event)" class="form-stack">
+        <div class="form-group">
+          <label class="field-label">Machine ID</label>
+          <input id="new-machine-id" type="text" required placeholder="e.g., VM-010" class="text-input input-sm" />
+        </div>
+        <div class="form-group">
+          <label class="field-label">Site Location</label>
+          <input id="new-machine-loc" type="text" required placeholder="e.g., Student Center Canteen" class="text-input input-sm" />
+        </div>
+        <div class="form-group">
+          <label class="field-label">Hardware Model</label>
+          <select id="new-machine-model" class="select-input full-width">
+            <option value="SmartVend Pro-48">SmartVend Pro-48</option>
+            <option value="SmartVend Mini-32">SmartVend Mini-32</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal('machine-modal')" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Add Terminal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Add Product SKU Modal -->
+  <div id="product-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Add Catalog SKU</h3>
+        <button onclick="closeModal('product-modal')" class="modal-close">&times;</button>
+      </div>
+      <form onsubmit="handleAddProduct(event)" class="form-stack">
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="field-label">SKU Code</label>
+            <input id="new-sku-code" type="text" required placeholder="SKU-310" class="text-input input-sm" />
+          </div>
+          <div class="form-group">
+            <label class="field-label">Category</label>
+            <select id="new-sku-cat" class="select-input full-width">
+              <option value="Beverages">Beverages</option>
+              <option value="Snacks">Snacks</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="field-label">Product Name</label>
+          <input id="new-sku-name" type="text" required placeholder="Matcha Latte Can 240ml" class="text-input input-sm" />
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="field-label">Unit Cost (₱)</label>
+            <input id="new-sku-cost" type="number" step="0.5" min="1" required value="28" class="text-input input-sm" />
+          </div>
+          <div class="form-group">
+            <label class="field-label">Vend Price (₱)</label>
+            <input id="new-sku-price" type="number" step="0.5" min="1" required value="50" class="text-input input-sm" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal('product-modal')" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Save SKU</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Create Maintenance Ticket Modal -->
+  <div id="ticket-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Create Maintenance Ticket</h3>
+        <button onclick="closeModal('ticket-modal')" class="modal-close">&times;</button>
+      </div>
+      <form onsubmit="handleAddTicket(event)" class="form-stack">
+        <div class="form-group">
+          <label class="field-label">Machine</label>
+          <select id="new-ticket-machine" class="select-input full-width"></select>
+        </div>
+        <div class="form-group">
+          <label class="field-label">Fault Description</label>
+          <input id="new-ticket-desc" type="text" required placeholder="e.g., Cooling compressor drift" class="text-input input-sm" />
+        </div>
+        <div class="form-group">
+          <label class="field-label">Priority</label>
+          <select id="new-ticket-priority" class="select-input full-width">
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Routine">Routine</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" onclick="closeModal('ticket-modal')" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Submit Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
